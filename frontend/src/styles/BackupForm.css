@@ -1,0 +1,84 @@
+.drag-bar, #drag-bar-backup {
+  flex-shrink: 0;
+  width: 5px;
+  background-color: #d1d5db;
+  cursor: col-resize;
+  transition: background-color 0.15s 0.15s ease-in-out;
+}
+
+#drag-bar-backup {
+  place-items: center;
+  justify-content: center;
+  width: 46px;
+  display: flex;
+}
+
+.drag-bar.drag-bar--dragging,
+.drag-bar:hover{
+  background-color: #63B3ED;
+}
+
+.drag-bar.drag-bar--horizontal {
+  height: 5px;
+  width: 100%;
+  cursor: row-resize;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-column {
+  flex-direction: column;
+}
+
+.shrink-0 {
+  display: block !important;
+  flex-shrink: 0;
+  overflow: auto;
+}
+
+.grow {
+  flex-grow: 1;
+  overflow: auto;
+}
+
+.h-screen {
+  height: 100vh;
+}
+
+.bg-darker {
+  background-color: #202020;
+}
+
+.bg-dark {
+  background-color: #2D3032;
+}
+
+.font-mono {
+  font-family: monospace;
+}
+
+.color-white {
+  color: white;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.contents {
+  display: grid;
+  transition: filter 0.2s ease-out, background-color 0.2s ease-out;
+  font-size: 16px;
+  overflow: auto;
+}
+
+/* .dragging {
+  filter: blur(5px);
+  background-color: #555555;
+} */
+
+.store-restore-btns button {
+  margin: 0px auto !important;
+}

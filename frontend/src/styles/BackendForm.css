@@ -1,0 +1,14 @@
+.aliases {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.alias {
+  float: left;
+  margin-right: 5px;
+}
+
+.input-group-alias {
+  width: auto;
+  display: none;
+}

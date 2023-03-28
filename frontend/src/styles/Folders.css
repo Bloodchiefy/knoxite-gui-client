@@ -1,0 +1,33 @@
+/* .folder {
+  width: 32px;
+  height: 32px;
+} */
+
+.entry-name {
+  margin-left: 5px;
+}
+
+.file-button {
+  width: 100%;
+  background: none;
+  text-align: left;
+  color: #fff;
+}
+
+.file-button:hover {
+  background-color: #888;
+  cursor: pointer;
+}
+
+.file-button.selected {
+  background-color: #888;
+}
+
+table.files {
+  width: 100%;
+  padding: 0;
+}
+
+ul.files li button {
+  border: none;
+}

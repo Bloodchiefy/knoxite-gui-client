@@ -1,0 +1,37 @@
+#app {
+  height: 100vh;
+  text-align: center;
+}
+
+.left {
+  color: #6c757d;
+  border-right: 1px solid #fff;
+  float: left;
+  height: 100%;
+  overflow: auto;
+  padding: 15px;
+  width: 40%;
+}
+
+.dir {
+  cursor: pointer;
+  padding: 3px;
+}
+
+.dir .fa {
+  margin-right: 5px;
+}
+
+.right {
+  float: right;
+  height: 100%;
+  overflow: auto;
+  padding: 15px;
+  width: 60%;
+}
+
+.result {
+  height: 20px;
+  line-height: 20px;
+  margin: 1.5rem auto;
+}
