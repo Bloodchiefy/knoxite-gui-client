@@ -6,6 +6,8 @@ import "./styles/BackendFormNavigation.scss";
 
 const BackendFormNavigation = ({
   setFormSelection,
+  formSelection,
+  switchToAlias,
   aliases
 }) => {
 
@@ -20,7 +22,7 @@ const BackendFormNavigation = ({
       </div>
       <div>
         {aliases.length > 0 ? <Nav.Item>
-          <Nav.Link onClick={() => switchForm("alias")}>Aliases</Nav.Link>
+          <Nav.Link onClick={() => switchToAlias(formSelection)}>Aliases</Nav.Link>
         </Nav.Item> : ""}
         <Nav.Item>
           <Nav.Link onClick={() => switchForm("file")}>Filesystem</Nav.Link>

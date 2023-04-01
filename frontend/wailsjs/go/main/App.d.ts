@@ -18,7 +18,7 @@ export function GetSnapshots():Promise<Array<any>>;
 
 export function GetVolumes():Promise<Array<any>>;
 
-export function InitConfigOnAlias(arg1:string,arg2:string):Promise<void>;
+export function InitConfigOnAlias(arg1:string,arg2:string):Promise<string>;
 
 export function InitConfiguration(arg1:string,arg2:string,arg3:string):Promise<void>;
 

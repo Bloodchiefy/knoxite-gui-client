@@ -1,6 +1,14 @@
 .aliases {
   list-style-type: none;
+  width: 100%;
+  height: 100%;
   padding-left: 0;
+}
+
+.alias-div {
+  margin-bottom: 5px;
+  width: 100%;
+  height: 40px;
 }
 
 .alias {
@@ -11,4 +19,8 @@
 .input-group-alias {
   width: auto;
   display: none;
+}
+
+.mb-3 {
+  position: relative;
 }

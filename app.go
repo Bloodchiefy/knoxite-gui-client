@@ -279,11 +279,19 @@ func (a *App) OpenDirectory() string {
 	return selection
 }
 
-func (a *App) InitConfigOnAlias(alias, password string) {
+func (a *App) InitConfigOnAlias(alias, password string) string {
 	globalOpts.Alias = alias
 	globalOpts.Password = password
 
-	initConfig()
+	if err := initConfig(); err != nil {
+		return err.Error()
+	}
+
+	if _, err := openRepository(globalOpts.Repo, globalOpts.Password); err != nil {
+		return err.Error()
+	}
+
+	return ""
 }
 
 func (a *App) InitConfiguration(repo, password, alias string) error {

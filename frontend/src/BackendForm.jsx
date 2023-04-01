@@ -1,17 +1,23 @@
 import { faFolderOpen, faRightToBracket } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {useEffect, useState} from 'react';
-import { Form, Button, Container } from 'react-bootstrap';
+import {useEffect, useRef, useState} from 'react';
+import { Form, Button, Container, Card } from 'react-bootstrap';
 import { InitGlobalOptsOnExistingConfig, OpenDirectory, InitConfiguration, InitConfigOnAlias } from "../wailsjs/go/main/App";
 import BackendFormNavigation from "./BackendFormNavigation";
 import "./styles/BackendForm.css";
 
-const BackendForm = ({setBackend}) => {
+const BackendForm = ({
+  setBackend,
+  setError,
+  setDisplayError,
+}) => {
   const [formSelection, setFormSelection] = useState("alias");
   const [aliases, setAliases] = useState([]);
+  const aliasesRef = useRef(false);
 
   useEffect(() => {
-    setTimeout(() => {
+    if(!aliasesRef.current) {
+      aliasesRef.current = true;
       InitGlobalOptsOnExistingConfig().then((result) => {
         if (result) {
           setAliases(result);
@@ -20,13 +26,24 @@ const BackendForm = ({setBackend}) => {
           setFormSelection("file");
         }
       });
-    }, 2000);
+    }
   });
+
+  const switchToAlias = (form) => {
+    InitGlobalOptsOnExistingConfig().then((result) => {
+      if (result) {
+        setAliases(result);
+        setFormSelection("alias");
+      } else {
+        setFormSelection(form);
+      }
+    });
+  };
 
   const formRender = () => {
     switch(formSelection) {
-    case "alias": return <AlreadyConfiguredRepos aliases={aliases} setBackend={setBackend} />;
-    case "file": return <FileSystemForm setFormSelection={setFormSelection} />;
+    case "alias": return <AlreadyConfiguredRepos aliases={aliases} setBackend={setBackend} setError={setError} setDisplayError={setDisplayError} />;
+    case "file": return <FileSystemForm switchToAlias={switchToAlias} />;
 
     default: return <></>;
     }
@@ -34,15 +51,24 @@ const BackendForm = ({setBackend}) => {
 
   return (
     <Container id="formContainer" className='no-user-select'>
-      <BackendFormNavigation aliases={aliases} setFormSelection={setFormSelection} />
+      <BackendFormNavigation aliases={aliases} switchToAlias={switchToAlias} formSelection={formSelection} setFormSelection={setFormSelection} />
       <div id="right">
-        {formRender()}
+        <Card>
+          <Card.Body>
+            {formRender()}
+          </Card.Body>
+        </Card>
       </div>
     </Container>
   );
 };
 
-const AlreadyConfiguredRepos = ({setBackend, aliases}) => {
+const AlreadyConfiguredRepos = ({
+  setBackend, 
+  aliases,
+  setDisplayError,
+  setError,
+}) => {
   const [password, setPassword] = useState([]);
 
   const onPwChange = (event) => {
@@ -50,8 +76,13 @@ const AlreadyConfiguredRepos = ({setBackend, aliases}) => {
   };
 
   const login = (alias) => {
-    InitConfigOnAlias(alias, password).then(() => {
-      setBackend(alias);
+    InitConfigOnAlias(alias, password).then((result) => {
+      if(result !== "") {
+        setDisplayError(true);
+        setError(result);
+      } else {
+        setBackend(alias);
+      }
     });
   };
 
@@ -66,7 +97,7 @@ const AlreadyConfiguredRepos = ({setBackend, aliases}) => {
 
   const aliasesList = aliases.map((alias, index) => {
     return (
-      <li key={index}>
+      <li className='alias-div' key={index}>
         <Button className="alias" onClick={() => showPwField(alias, index)}>
           {alias}
         </Button>
@@ -90,7 +121,9 @@ const AlreadyConfiguredRepos = ({setBackend, aliases}) => {
   );
 };
 
-const FileSystemForm = ({setFormSelection}) => {
+const FileSystemForm = ({
+  switchToAlias
+}) => {
   const [folder, setFolder] = useState("");
   const [password, setPassword] = useState("");
   const [password_confirmation, setPasswordConfirmation] = useState("");
@@ -114,16 +147,12 @@ const FileSystemForm = ({setFormSelection}) => {
   };
 
   const onSubmit = () => {
-    debugger;
     if (password === password_confirmation && 
       password !== "" && 
       folder !== "" &&
       alias !== "") {
-      debugger;
       InitConfiguration(folder, password, alias).then(() => {
-        setFormSelection("alias");
-      }).catch((err) => {
-        if(err) debugger;
+        switchToAlias("file");
       });
     }
   };
@@ -135,28 +164,45 @@ const FileSystemForm = ({setFormSelection}) => {
         <Form.Group className="mb-3" controlId="formBasicFolder">
           <Form.Label>Folder</Form.Label>
           <div className='input-group'>
-            <Form.Control type="text" value={folder} disabled={true} />
+            <Form.Control type="text" value={folder} disabled={true} aria-describedby="formBasicFolderCheck" isInvalid={folder.trim() === ""} />
             <div className='input-group-btn'>
               <Button variant="light" onClick={() => selectFolder()}>
                 <FontAwesomeIcon icon={faFolderOpen} />
               </Button>
             </div>
           </div>
+          <Form.Control.Feedback type="invalid" tooltip>
+            Folder must be selected!
+          </Form.Control.Feedback>
         </Form.Group>
 
         <Form.Group className="mb-3" controlId="formBasicPassword">
           <Form.Label>Password</Form.Label>
-          <Form.Control type="password" value={password} onChange={onChangePw} />
+          <Form.Control type="password" value={password} onChange={onChangePw} aria-describedby="formBasicPasswordCheck" isInvalid={password.trim() === "" || password !== password_confirmation} />
+
+          <Form.Control.Feedback type="invalid" tooltip>
+            Password musn't be empty!
+            Password must be the same as password confirmation!
+          </Form.Control.Feedback>
         </Form.Group>
 
         <Form.Group className="mb-3" controlId="formBasicPasswordConfirmation">
           <Form.Label>Password Confirmation</Form.Label>
-          <Form.Control type="password" value={password_confirmation} onChange={onChangePwCon} />
+          <Form.Control type="password" value={password_confirmation} onChange={onChangePwCon} aria-describedby="formBasicPasswordConfirmationCheck" isInvalid={password_confirmation.trim() === "" || password !== password_confirmation} />
+
+          <Form.Control.Feedback type="invalid" tooltip>
+            Password confirmation musn't be empty!
+            Password must be the same as password confirmation!
+          </Form.Control.Feedback>
         </Form.Group>
 
         <Form.Group className="mb-3" controlId="formBasicAlias">
           <Form.Label>Alias</Form.Label>
-          <Form.Control type="text" value={alias} onChange={onChangeAlias} />
+          <Form.Control type="text" value={alias} onChange={onChangeAlias} aria-describedby="formBasicAliasCheck" isInvalid={alias.trim() === ""}/>
+
+          <Form.Control.Feedback type="invalid" tooltip>
+            Alias musn't be empty!
+          </Form.Control.Feedback>
         </Form.Group>
 
         <Button variant="success" onClick={() => onSubmit()}>
