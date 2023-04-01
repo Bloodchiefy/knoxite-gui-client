@@ -1,6 +1,8 @@
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect } from "react";
-import { Card, Container, Table } from "react-bootstrap";
-import { GetSnapshots, OpenAllSnapshots, OpenSnapshot } from "../wailsjs/go/main/App";
+import { Button, Card, Container, Table } from "react-bootstrap";
+import { GetSnapshots, OpenAllSnapshots, OpenSnapshot, DeleteSnapshot } from "../wailsjs/go/main/App";
 import "./styles/VolumesSnapshots.css";
 
 const Snapshots = ({
@@ -15,7 +17,11 @@ const Snapshots = ({
   useEffect(() => {
     setTimeout(() => {
       GetSnapshots(volume).then((result) => {
-        if(result) setSnapshots(result);
+        if(result) {
+          setSnapshots(result);
+        } else {
+          setSnapshots([]);
+        }
       });
     }, 1000);
   }, [
@@ -24,18 +30,36 @@ const Snapshots = ({
     snapshots
   ]);
 
+  const deleteSnapshots = (snapID) => {
+    DeleteSnapshot(snapID).then((result) => {
+      if(result === "") {
+        GetSnapshots().then((snaps) => {
+          if(snaps) {
+            setSnapshots(snaps);
+          } else {
+            setSnapshots([]);
+          }
+        });
+      }
+    });
+  };
+
   const openSnapshot = (snapID) => {
     if(snapID === "all") {
       OpenAllSnapshots().then(result => {
-        if(result) setFiles(result);
-        setSnapshot("all");
-        setView("files");
+        if(result) {
+          setFiles(result);
+          setSnapshot("all");
+          setView("files");
+        }
       });
     } else {
       OpenSnapshot(snapID).then((result) => {
-        if(result) setFiles(result);
-        setSnapshot(snapID);
-        setView("files");
+        if(result) {
+          setFiles(result);
+          setSnapshot(snapID);
+          setView("files");
+        }
       });
     }
   };
@@ -43,10 +67,19 @@ const Snapshots = ({
 
   const snapshotsList = snapshots.map((snapshot, index) => {
     return (
-      <tr key={index + 1} onClick={() => openSnapshot(snapshot[0])}>
-        <td>{snapshot[0]}</td>
+      <tr key={index + 1}>
+        <td>
+          <Button variant="link" onClick={() => openSnapshot(snapshot[0])}>
+            {snapshot[0]}
+          </Button>
+        </td>
         <td>{snapshot[1]}</td>
         <td>{snapshot[2]}</td>
+        <td style={{textAlign: "right"}}>
+          <Button variant="danger" onClick={() => deleteSnapshots(snapshot[0])}>
+            <FontAwesomeIcon icon={faTrash} />
+          </Button>
+        </td>
       </tr>
     );
   });
@@ -62,7 +95,7 @@ const Snapshots = ({
         ...snapshotsList
       ];
     } else {
-      return <tr><td colSpan={3}>No snapshots found.</td></tr>;
+      return <tr><td colSpan={4}>No snapshots found.</td></tr>;
     }
   };
 

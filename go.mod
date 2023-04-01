@@ -4,10 +4,8 @@ go 1.18
 
 require (
 	github.com/BurntSushi/toml v1.2.1
-	github.com/dustin/go-humanize v1.0.0
 	github.com/klauspost/shutdown2 v1.1.0
 	github.com/knoxite/knoxite v0.0.0-20230317212904-5087cfcdfc76
-	github.com/muesli/goprogressbar v0.2.0
 	github.com/muesli/gotable v0.0.0-20210307142814-960606545b8b
 	github.com/wailsapp/wails/v2 v2.4.1
 )

@@ -13,12 +13,10 @@ import (
 
 	// _ "../knoxite/storage/http" // needs to be replaced with the github path
 	"github.com/BurntSushi/toml"
-	"github.com/dustin/go-humanize"
 	shutdown "github.com/klauspost/shutdown2"
 	"github.com/knoxite/knoxite"
 	"github.com/knoxite/knoxite/cmd/knoxite/config"
 	"github.com/knoxite/knoxite/cmd/knoxite/utils"
-	"github.com/muesli/goprogressbar"
 	"github.com/muesli/gotable"
 	// _ "github.com/knoxite/knoxite/storage/amazons3"
 	// _ "github.com/knoxite/knoxite/storage/azure"
@@ -90,12 +88,12 @@ func initConfig() error {
 	var err error
 	cfg, err = config.New(globalOpts.ConfigURL)
 	if err != nil {
-		l.Fatalf("Error reading the config file: %v", err)
+		// l.Fatalf("Error reading the config file: %v", err)
 		return err
 	}
 
 	if err = cfg.Load(); err != nil {
-		l.Fatalf("Error parsing the toml config file at '%s': %v", cfg.URL().Path, err)
+		// l.Fatalf("Error parsing the toml config file at '%s': %v", cfg.URL().Path, err)
 		return err
 	}
 
@@ -109,37 +107,44 @@ func initConfig() error {
 	if globalOpts.Alias != "" {
 		rep, ok := cfg.Repositories[globalOpts.Alias]
 		if !ok {
-			l.Fatalf("Error loading the specified alias")
+			// l.Fatalf("Error loading the specified alias")
 			return err
 		}
 
 		globalOpts.Repo = rep.Url
 	}
-	return cfg.Save()
+
+	if fs, err := os.Stat(globalOpts.ConfigURL); err != nil || fs.Size() == 0 {
+		fmt.Println(fs.Size())
+		fmt.Println(err)
+		return cfg.Save()
+	}
+
+	return nil
 }
 
-func executeCat(snapshotID string, file string) error {
-	repository, err := openRepository(globalOpts.Repo, globalOpts.Password)
-	if err != nil {
-		return err
-	}
-	_, snapshot, err := repository.FindSnapshot(snapshotID)
-	if err != nil {
-		return err
-	}
+// func executeCat(snapshotID string, file string) error {
+// 	repository, err := openRepository(globalOpts.Repo, globalOpts.Password)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	_, snapshot, err := repository.FindSnapshot(snapshotID)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	if archive, ok := snapshot.Archives[file]; ok {
-		b, _, err := knoxite.DecodeArchiveData(repository, *archive)
-		if err != nil {
-			return err
-		}
+// 	if archive, ok := snapshot.Archives[file]; ok {
+// 		b, _, err := knoxite.DecodeArchiveData(repository, *archive)
+// 		if err != nil {
+// 			return err
+// 		}
 
-		_, err = os.Stdout.Write(b)
-		return err
-	}
+// 		_, err = os.Stdout.Write(b)
+// 		return err
+// 	}
 
-	return fmt.Errorf("%s: No such file or directory", file)
-}
+// 	return fmt.Errorf("%s: No such file or directory", file)
+// }
 
 func executeConfigInit() error {
 	log.Printf("Writing configuration file to: %s\n", cfg.URL().Path)
@@ -333,29 +338,29 @@ func executeRepoCat() error {
 	return nil
 }
 
-func executeRepoPack() error {
-	r, err := openRepository(globalOpts.Repo, globalOpts.Password)
-	if err != nil {
-		return err
-	}
-	index, err := knoxite.OpenChunkIndex(&r)
-	if err != nil {
-		return err
-	}
+// func executeRepoPack() error {
+// 	r, err := openRepository(globalOpts.Repo, globalOpts.Password)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	index, err := knoxite.OpenChunkIndex(&r)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	freedSize, err := index.Pack(&r)
-	if err != nil {
-		return err
-	}
+// 	freedSize, err := index.Pack(&r)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	err = index.Save(&r)
-	if err != nil {
-		return err
-	}
+// 	err = index.Save(&r)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	l.Printf("Freed storage space: %s\n", knoxite.SizeToString(freedSize))
-	return nil
-}
+// 	l.Printf("Freed storage space: %s\n", knoxite.SizeToString(freedSize))
+// 	return nil
+// }
 
 func executeRepoInfo() error {
 	r, err := openRepository(globalOpts.Repo, globalOpts.Password)
@@ -538,7 +543,8 @@ func executeSnapshotList(volID string) error {
 
 func store(repository *knoxite.Repository, chunkIndex *knoxite.ChunkIndex, snapshot *knoxite.Snapshot, targets []string, opts StoreOptions) error {
 	// we want to be notified during the first phase of a shutdown
-	cancel := shutdown.First()
+	cancel = shutdown.First()
+	// running = true
 
 	wd, err := os.Getwd()
 	if err != nil {
@@ -568,21 +574,22 @@ func store(repository *knoxite.Repository, chunkIndex *knoxite.ChunkIndex, snaps
 		ParityParts: opts.FailureTolerance,
 	}
 
-	f, err := os.OpenFile(filepath.Join(wd, "progress.log"), os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	goprogressbar.Stdout = f
+	// f, err := os.OpenFile(filepath.Join(wd, "progress.log"), os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
+	// if err != nil {
+	// 	return err
+	// }
+	// defer f.Close()
+	// goprogressbar.Stdout = f
 
 	// startTime := time.Now()
-	progress := snapshot.Add(*repository, chunkIndex, so)
+	progressHook = snapshot.Add(*repository, chunkIndex, so)
 
 	lastPath := ""
 
-	items := int64(1)
+	items = uint64(1)
+	// items <- int64(1)
 	errs := make(map[string]error)
-	for p := range progress {
+	for p := range progressHook {
 		select {
 		case n := <-cancel:
 			fmt.Println("Aborting...")
@@ -599,24 +606,25 @@ func store(repository *knoxite.Repository, chunkIndex *knoxite.ChunkIndex, snaps
 				snapshot.Stats.Errors++
 			}
 			if p.Path != lastPath && lastPath != "" {
+				// items <- (int64(1) + <-items)
 				items++
-				fmt.Println()
+				// fmt.Println()
 			}
-			f.WriteString(fmt.Sprintf("%s  %s/s\n",
-				knoxite.SizeToString(uint64(int64(p.CurrentItemStats.Transferred))),
-				knoxite.SizeToString(p.TransferSpeed())))
+			// f.WriteString(fmt.Sprintf("%s  %s/s\n",
+			// 	knoxite.SizeToString(uint64(int64(p.CurrentItemStats.Transferred))),
+			// 	knoxite.SizeToString(p.TransferSpeed())))
 
-			f.WriteString(fmt.Sprintf("%s / %s (%s of %s)\n",
-				knoxite.SizeToString(uint64(int64(p.TotalStatistics.Transferred))),
-				knoxite.SizeToString(uint64(int64(p.TotalStatistics.Size))),
-				humanize.Comma(items),
-				humanize.Comma(int64(p.TotalStatistics.Files+p.TotalStatistics.Dirs+p.TotalStatistics.SymLinks))))
+			// f.WriteString(fmt.Sprintf("%s / %s (%s of %s)\n",
+			// 	knoxite.SizeToString(uint64(int64(p.TotalStatistics.Transferred))),
+			// 	knoxite.SizeToString(uint64(int64(p.TotalStatistics.Size))),
+			// 	humanize.Comma(items),
+			// 	humanize.Comma(int64(p.TotalStatistics.Files+p.TotalStatistics.Dirs+p.TotalStatistics.SymLinks))))
 
 			if p.Path != lastPath {
 				lastPath = p.Path
-				f.WriteString(p.Path + "\n")
+				fmt.Println(p.Path)
 			}
-			fmt.Println(p.Path)
+			// fmt.Println(p.Path)
 		}
 	}
 
@@ -624,10 +632,10 @@ func store(repository *knoxite.Repository, chunkIndex *knoxite.ChunkIndex, snaps
 
 	// f.WriteString(fmt.Sprintf("%s/s\n",
 	// 	knoxite.SizeToString(uint64(float64(int64(p2.TotalStatistics.Transferred))/time.Since(startTime).Seconds()))))
-	f.WriteString(fmt.Sprintf("\nSnapshot %s created: %s\n", snapshot.ID, snapshot.Stats.String()))
-	for file, err := range errs {
-		f.WriteString(fmt.Sprintf("'%s': failed to store: %v\n", file, err))
-	}
+	// f.WriteString(fmt.Sprintf("\nSnapshot %s created: %s\n", snapshot.ID, snapshot.Stats.String()))
+	// for file, err := range errs {
+	// 	f.WriteString(fmt.Sprintf("'%s': failed to store: %v\n", file, err))
+	// }
 
 	return nil
 }
@@ -692,59 +700,59 @@ func executeStore(volumeID string, args []string, opts StoreOptions) error {
 	return repository.Save()
 }
 
-func executeVerifyRepo(opts VerifyOptions) error {
-	repository, err := openRepository(globalOpts.Repo, globalOpts.Password)
-	if err != nil {
-		return err
-	}
+// func executeVerifyRepo(opts VerifyOptions) error {
+// 	repository, err := openRepository(globalOpts.Repo, globalOpts.Password)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	progress, err := knoxite.VerifyRepo(repository, opts.Percentage)
-	if err != nil {
-		return err
-	}
+// 	progress, err := knoxite.VerifyRepo(repository, opts.Percentage)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	errors := verify(progress)
+// 	errors := verify(progress)
 
-	fmt.Println()
-	fmt.Printf("Verify repository done: %d errors\n", len(errors))
-	return nil
-}
+// 	fmt.Println()
+// 	fmt.Printf("Verify repository done: %d errors\n", len(errors))
+// 	return nil
+// }
 
-func executeVerifyVolume(volumeId string, opts VerifyOptions) error {
-	repository, err := openRepository(globalOpts.Repo, globalOpts.Password)
-	if err != nil {
-		return err
-	}
+// func executeVerifyVolume(volumeId string, opts VerifyOptions) error {
+// 	repository, err := openRepository(globalOpts.Repo, globalOpts.Password)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	progress, err := knoxite.VerifyVolume(repository, volumeId, opts.Percentage)
-	if err != nil {
-		return err
-	}
+// 	progress, err := knoxite.VerifyVolume(repository, volumeId, opts.Percentage)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	errors := verify(progress)
+// 	errors := verify(progress)
 
-	fmt.Println()
-	fmt.Printf("Verify volume done: %d errors\n", len(errors))
-	return nil
-}
+// 	fmt.Println()
+// 	fmt.Printf("Verify volume done: %d errors\n", len(errors))
+// 	return nil
+// }
 
-func executeVerifySnapshot(snapshotId string, opts VerifyOptions) error {
-	repository, err := openRepository(globalOpts.Repo, globalOpts.Password)
-	if err != nil {
-		return err
-	}
+// func executeVerifySnapshot(snapshotId string, opts VerifyOptions) error {
+// 	repository, err := openRepository(globalOpts.Repo, globalOpts.Password)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	progress, err := knoxite.VerifySnapshot(repository, snapshotId, opts.Percentage)
-	if err != nil {
-		return err
-	}
+// 	progress, err := knoxite.VerifySnapshot(repository, snapshotId, opts.Percentage)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	errors := verify(progress)
+// 	errors := verify(progress)
 
-	fmt.Println()
-	fmt.Printf("Verify snapshot done: %d errors\n", len(errors))
-	return nil
-}
+// 	fmt.Println()
+// 	fmt.Printf("Verify snapshot done: %d errors\n", len(errors))
+// 	return nil
+// }
 
 func verify(progress <-chan knoxite.Progress) []error {
 	var errors []error
@@ -821,6 +829,7 @@ func executeVolumeRemove(volumeID string) error {
 	}
 
 	vol, err := repo.FindVolume(volumeID)
+	fmt.Println(err)
 	if err != nil {
 		return err
 	}
@@ -834,19 +843,20 @@ func executeVolumeRemove(volumeID string) error {
 	}
 
 	if err := repo.RemoveVolume(vol); err != nil {
+		fmt.Println(err)
 		return err
 	}
 
 	if err := chunkIndex.Save(&repo); err != nil {
+		fmt.Println(err)
 		return err
 	}
 
 	if err := repo.Save(); err != nil {
+		fmt.Println(err)
 		return err
 	}
 
-	l.Printf("Volume %s '%s' successfully removed\n", vol.ID, vol.Name)
-	l.Printf("Do not forget to run 'repo pack' to delete un-referenced chunks and free up storage space!\n")
 	return nil
 }
 

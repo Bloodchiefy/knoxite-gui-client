@@ -102,7 +102,6 @@ github.com/cpuguy83/go-md2man/v2 v2.0.1/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46t
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/dustin/go-humanize v1.0.0 h1:VSnTsYCnlFHaM2/igO1h6X3HA71jcobQuxemgkq4zYo=
 github.com/dustin/go-humanize v1.0.0/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
@@ -340,7 +339,6 @@ github.com/muesli/crunchy v0.4.0 h1:qdiml8gywULHBsztiSAf6rrE6EyuNasNKZ104mAaahM=
 github.com/muesli/crunchy v0.4.0/go.mod h1:9k4x6xdSbb7WwtAVy0iDjaiDjIk6Wa5AgUIqp+HqOpU=
 github.com/muesli/go-app-paths v0.2.1 h1:Qi+2igkDX2aPqyRddp7P0sMQIBwBqhkfQfNcjdGjL6Y=
 github.com/muesli/go-app-paths v0.2.1/go.mod h1:SxS3Umca63pcFcLtbjVb+J0oD7cl4ixQWoBKhGEtEho=
-github.com/muesli/goprogressbar v0.2.0 h1:qsW8FigQF3n3YxDTQCihy2xRya8/JqlPHJi01Lbx5HA=
 github.com/muesli/goprogressbar v0.2.0/go.mod h1:19yRWZtJozyS7m+fyTUK0rE76LABdnU7zp0BuyeDwLc=
 github.com/muesli/gotable v0.0.0-20210307142814-960606545b8b h1:EBiAh4IZ+6lLg0lxFqrrqqF3y0/t31yqxJxg8tzUB/o=
 github.com/muesli/gotable v0.0.0-20210307142814-960606545b8b/go.mod h1:DbLnerctPPIGa6MucM01kyoNgy3cr6D9YlpLMc8usgY=

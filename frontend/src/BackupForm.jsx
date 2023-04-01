@@ -1,31 +1,32 @@
 import { useState } from 'react';
 import { useResizable } from 'react-resizable-layout';
 import { cn } from './utils/utils';
-import Splitter from "./components/Splitter";
+// import Splitter from "./components/Splitter";
 import SplitterBackup from './components/SplitterBackup';
 import Folders from "./Folders";
 import Repository from "./Repository";
-import TerminalOutputs from './TerminalOutputs';
+// import TerminalOutputs from './TerminalOutputs';
 import { Store, Restore } from '../wailsjs/go/main/App';
 import "./styles/BackupForm.css";
-import singletonTerminal from './Terminal';
+// import singletonTerminal from './Terminal';
 
 const BackupForm = ({
-  setBackend
+  setBackend,
+  setDisplayProgress
 }) => {
   const [volume, setVolume] = useState("");
   const [snapshot, setSnapshot] = useState("");
   const [snapshots, setSnapshots] = useState([]);
-  const {
-    isDragging: isTerminalDragging,
-    position: terminalH,
-    splitterProps: terminalDragBarProps
-  } = useResizable({
-    axis: "y",
-    initial: 150,
-    min: 50,
-    reverse: true
-  });
+  // const {
+  //   isDragging: isTerminalDragging,
+  //   position: terminalH,
+  //   splitterProps: terminalDragBarProps
+  // } = useResizable({
+  //   axis: "y",
+  //   initial: 150,
+  //   min: 50,
+  //   reverse: true
+  // });
   const {
     isDragging: isFileDragging,
     position: fileW,
@@ -49,6 +50,20 @@ const BackupForm = ({
     }
   };
 
+  const storeTargets = async (targets) => {
+    // var oID = singletonTerminal.insertProgress(
+    //   "Store", 
+    //   "storing data", 
+    //   "Running", 
+    //   "Success");
+    Store(volume, targets);
+    // .then(() => {
+    //   singletonTerminal.updateOutput(oID, "Store", "finished", "Success");
+    // }).catch(() => {
+    //   singletonTerminal.updateOutput(oID, "Store", "finished", "Crashed");
+    // });
+  };
+
   const store = () => {
     if (volume !== "") {
       var targetDoms = document.getElementsByClassName("selected");
@@ -58,27 +73,21 @@ const BackupForm = ({
       }
 
       if(targets.length > 0) {
-        var oID = singletonTerminal.insertProgress(
-          "Store", 
-          "storing data", 
-          "Running", 
-          "Success");
-        Store(volume, targets).catch(() => {
-          singletonTerminal.updateOutput(oID, "Store", "finished", "Crashed");
-        });
+        storeTargets(targets);
+        setDisplayProgress(true);
       }
     }
   };
 
   const restore = () => {
-    if (snapshot !== "") {
+    if (snapshot !== "" && snapshot !== "all") {
       var targetDoms = document.getElementsByClassName("selected");
       if (targetDoms.length === 1) {
         var target = targetDoms[0].dataset.path;
         Restore(snapshot, target);
       }
     }
-  }
+  };
 
   return (
     <div className={"flex flex-column h-screen font-mono color-white overflow-hidden"}>
@@ -103,7 +112,7 @@ const BackupForm = ({
             setSnapshot={setSnapshot} />
         </div>
       </div>
-      <Splitter
+      {/* <Splitter
         dir={"horizontal"}
         isDragging={isTerminalDragging}
         {...terminalDragBarProps}
@@ -116,7 +125,7 @@ const BackupForm = ({
         style={{ height: terminalH }}
       >
         <TerminalOutputs />
-      </div>
+      </div> */}
     </div>
   );
 };

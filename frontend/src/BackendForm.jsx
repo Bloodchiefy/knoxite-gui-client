@@ -1,6 +1,6 @@
 import { faFolderOpen, faRightToBracket } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {useEffect, useState, useRef} from 'react';
+import {useEffect, useState} from 'react';
 import { Form, Button, Container } from 'react-bootstrap';
 import { InitGlobalOptsOnExistingConfig, OpenDirectory, InitConfiguration, InitConfigOnAlias } from "../wailsjs/go/main/App";
 import BackendFormNavigation from "./BackendFormNavigation";
@@ -8,11 +8,25 @@ import "./styles/BackendForm.css";
 
 const BackendForm = ({setBackend}) => {
   const [formSelection, setFormSelection] = useState("alias");
+  const [aliases, setAliases] = useState([]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      InitGlobalOptsOnExistingConfig().then((result) => {
+        if (result) {
+          setAliases(result);
+          setFormSelection("alias");
+        } else {
+          setFormSelection("file");
+        }
+      });
+    }, 2000);
+  });
 
   const formRender = () => {
     switch(formSelection) {
-    case "alias": return <AlreadyConfiguredRepos setBackend={setBackend} />;
-    case "file": return <FileSystemForm />;
+    case "alias": return <AlreadyConfiguredRepos aliases={aliases} setBackend={setBackend} />;
+    case "file": return <FileSystemForm setFormSelection={setFormSelection} />;
 
     default: return <></>;
     }
@@ -20,7 +34,7 @@ const BackendForm = ({setBackend}) => {
 
   return (
     <Container id="formContainer" className='no-user-select'>
-      <BackendFormNavigation setFormSelection={setFormSelection} />
+      <BackendFormNavigation aliases={aliases} setFormSelection={setFormSelection} />
       <div id="right">
         {formRender()}
       </div>
@@ -28,19 +42,8 @@ const BackendForm = ({setBackend}) => {
   );
 };
 
-const AlreadyConfiguredRepos = ({setBackend}) => {
-  const [aliases, setAliases] = useState([]);
+const AlreadyConfiguredRepos = ({setBackend, aliases}) => {
   const [password, setPassword] = useState([]);
-  const aliasesRef = useRef(false);
-
-  useEffect(() => {
-    if (!aliasesRef.current) {
-      aliasesRef.current = true;
-      InitGlobalOptsOnExistingConfig().then((result) => {
-        if (result) setAliases(result);
-      });
-    }
-  });
 
   const onPwChange = (event) => {
     if(event && event.target) setPassword(event.target.value);
@@ -87,7 +90,7 @@ const AlreadyConfiguredRepos = ({setBackend}) => {
   );
 };
 
-const FileSystemForm = () => {
+const FileSystemForm = ({setFormSelection}) => {
   const [folder, setFolder] = useState("");
   const [password, setPassword] = useState("");
   const [password_confirmation, setPasswordConfirmation] = useState("");
@@ -110,13 +113,17 @@ const FileSystemForm = () => {
     if(event && event.target) setAlias(event.target.value);
   };
 
-  const onSubmit = (event) => {
+  const onSubmit = () => {
+    debugger;
     if (password === password_confirmation && 
       password !== "" && 
       folder !== "" &&
       alias !== "") {
-      InitConfiguration(folder, password, alias).then((result) => {
-        if(result) debugger;
+      debugger;
+      InitConfiguration(folder, password, alias).then(() => {
+        setFormSelection("alias");
+      }).catch((err) => {
+        if(err) debugger;
       });
     }
   };
@@ -124,7 +131,7 @@ const FileSystemForm = () => {
   return (
     <>
       <h2>Filesystem</h2>
-      <Form onSubmit={onSubmit}>
+      <Form>
         <Form.Group className="mb-3" controlId="formBasicFolder">
           <Form.Label>Folder</Form.Label>
           <div className='input-group'>
@@ -152,7 +159,7 @@ const FileSystemForm = () => {
           <Form.Control type="text" value={alias} onChange={onChangeAlias} />
         </Form.Group>
 
-        <Button type="submit" variant="success">
+        <Button variant="success" onClick={() => onSubmit()}>
           Submit
         </Button>
       </Form>

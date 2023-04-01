@@ -5,7 +5,8 @@ import logo from "./assets/images/knoxite-logo.svg";
 import "./styles/BackendFormNavigation.scss";
 
 const BackendFormNavigation = ({
-  setFormSelection
+  setFormSelection,
+  aliases
 }) => {
 
   const switchForm = (form) => {
@@ -18,9 +19,9 @@ const BackendFormNavigation = ({
         <img alt="knoxite-logo" src={logo} />
       </div>
       <div>
-        <Nav.Item>
+        {aliases.length > 0 ? <Nav.Item>
           <Nav.Link onClick={() => switchForm("alias")}>Aliases</Nav.Link>
-        </Nav.Item>
+        </Nav.Item> : ""}
         <Nav.Item>
           <Nav.Link onClick={() => switchForm("file")}>Filesystem</Nav.Link>
         </Nav.Item>

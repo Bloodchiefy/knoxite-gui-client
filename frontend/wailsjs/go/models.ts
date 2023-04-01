@@ -89,6 +89,32 @@ export namespace main {
 	        this.volID = source["volID"];
 	    }
 	}
+	export class ProgressUI {
+	    files: number;
+	    dirs: number;
+	    symlinks: number;
+	    size: number;
+	    stored_size: number;
+	    transferred: number;
+	    errors: number;
+	    items: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ProgressUI(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.files = source["files"];
+	        this.dirs = source["dirs"];
+	        this.symlinks = source["symlinks"];
+	        this.size = source["size"];
+	        this.stored_size = source["stored_size"];
+	        this.transferred = source["transferred"];
+	        this.errors = source["errors"];
+	        this.items = source["items"];
+	    }
+	}
 
 }
 

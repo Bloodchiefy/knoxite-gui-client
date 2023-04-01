@@ -9,6 +9,7 @@ const SplitterBackup = ({
   isDragging,
   onClick,
   store,
+  restore,
   ...props
 }) => {
   return (
@@ -30,7 +31,7 @@ const SplitterBackup = ({
         </Button>
         <br />
         <br />
-        <Button variant='dark' className='no-user-select'>
+        <Button variant='dark' className='no-user-select' onClick={restore}>
           <FontAwesomeIcon className='no-user-select' icon={faArrowLeft} />
         </Button>
       </div>

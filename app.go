@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -11,14 +10,18 @@ import (
 	"syscall"
 	"time"
 
+	shutdown "github.com/klauspost/shutdown2"
 	"github.com/knoxite/knoxite"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 var (
-	repository *knoxite.Repository
-	volume     *knoxite.Volume
-	volumeID   string
+	repository   *knoxite.Repository
+	volume       *knoxite.Volume
+	volumeID     string
+	progressHook <-chan knoxite.Progress
+	items        uint64
+	cancel       shutdown.Notifier
 )
 
 // File struct
@@ -33,6 +36,11 @@ type FileForUI struct {
 	IsDir      bool   `json:"isDir"`
 	SnapshotID string `json:"snapID"`
 	VolumeID   string `json:"volID"`
+}
+
+type ProgressUI struct {
+	knoxite.Stats
+	Items uint64 `json:"items"`
 }
 
 // App struct
@@ -65,46 +73,66 @@ func (a *App) loadRepository() (*knoxite.Repository, error) {
 	return &knoxite.Repository{}, fmt.Errorf("couldn't load repository")
 }
 
-func (a *App) Store(volID string, targets []string) []string {
-	err := executeStore(volID, targets, StoreOptions{})
-	volume, err := repository.FindVolume(volID)
-	if err != nil {
-		return []string{}
-	}
-	return volume.Snapshots
+func (a *App) Store(volID string, targets []string) {
+	go func() {
+		executeStore(volID, targets, StoreOptions{})
+	}()
 }
 
 func (a *App) Restore(snapID, target string) {
-	executeRestore(snapID, target, RestoreOptions{})
+	go func() {
+		executeRestore(snapID, target, RestoreOptions{})
+	}()
 }
 
-func (a *App) GetProgress() string {
-	wd, _ := os.Getwd()
-	f, _ := os.Open(filepath.Join(wd, "progress.log"))
-	line := ""
-	var cursor int64 = 0
-	stat, _ := f.Stat()
-	filesize := stat.Size()
-	for {
-		cursor -= 1
-		f.Seek(cursor, io.SeekEnd)
+// func (a *App) GetProgressItems() int64 {
+// 	return items
+// }
 
-		char := make([]byte, 1)
-		f.Read(char)
-
-		if cursor != -1 && (char[0] == 10 || char[0] == 13) { // stop if we find a line
-			break
-		}
-
-		line = fmt.Sprintf("%s%s", string(char), line) // there is more efficient way
-
-		if cursor == -filesize { // stop if we are at the begining
-			break
-		}
+func (a *App) GetProgress() ProgressUI {
+	p := <-progressHook
+	fmt.Println(p)
+	stats := p.TotalStatistics
+	statsItems := uint64(stats.Dirs + stats.Files + stats.SymLinks)
+	if statsItems == items {
+		return ProgressUI{stats, statsItems}
 	}
-
-	return line
+	return ProgressUI{p.TotalStatistics, items}
 }
+
+func (a *App) Cancel() {
+	// fmt.Println("Cancel")
+	// close(<-cancel)
+	// fmt.Println("Cancel tried")
+}
+
+// func (a *App) GetProgress() string {
+// 	wd, _ := os.Getwd()
+// 	f, _ := os.Open(filepath.Join(wd, "progress.log"))
+// 	line := ""
+// 	var cursor int64 = 0
+// 	stat, _ := f.Stat()
+// 	filesize := stat.Size()
+// 	for {
+// 		cursor -= 1
+// 		f.Seek(cursor, io.SeekEnd)
+
+// 		char := make([]byte, 1)
+// 		f.Read(char)
+
+// 		if cursor != -1 && (char[0] == 10 || char[0] == 13) { // stop if we find a line
+// 			break
+// 		}
+
+// 		line = fmt.Sprintf("%s%s", string(char), line) // there is more efficient way
+
+// 		if cursor == -filesize { // stop if we are at the begining
+// 			break
+// 		}
+// 	}
+
+// 	return line
+// }
 
 func (a *App) OpenSnapshot(snapID string) (files []FileForUI) {
 	snapshot, err := volume.LoadSnapshot(snapID, repository)
@@ -181,6 +209,15 @@ func (a *App) GetSnapshots() (snapshots [][]string) {
 	return
 }
 
+func (a *App) DeleteSnapshot(snapID string) string {
+	err := executeSnapshotRemove(snapID)
+	if err != nil {
+		return err.Error()
+	}
+
+	return ""
+}
+
 func (a *App) OpenVolume(volID string) (err error) {
 	repository, err = a.loadRepository()
 	if err != nil {
@@ -195,14 +232,22 @@ func (a *App) OpenVolume(volID string) (err error) {
 	return nil
 }
 
-func (a *App) CreateVolume(name, description string) (string, error) {
-	volID, err := executeVolumeInit(name, description)
+func (a *App) CreateVolume(name, description string) error {
+	_, err := executeVolumeInit(name, description)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	volume, err = repository.FindVolume(volID)
-	return volID, nil
+	return nil
+}
+
+func (a *App) DeleteVolume(volID string) string {
+	err := executeVolumeRemove(volID)
+	if err != nil {
+		return err.Error()
+	}
+
+	return ""
 }
 
 func (a *App) GetVolumes() (volumes [][]string) {
@@ -248,6 +293,9 @@ func (a *App) InitConfiguration(repo, password, alias string) error {
 	}
 	if err := executeConfigAlias(alias); err != nil {
 		return err
+	}
+	if _, err := knoxite.OpenRepository(repo, password); err != nil {
+		return executeRepoInit()
 	}
 	return nil
 }
