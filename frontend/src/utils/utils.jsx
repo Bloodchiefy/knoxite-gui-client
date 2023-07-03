@@ -154,3 +154,43 @@ export const getIconByType = (filepath, dir) => {
     return <FontAwesomeIcon icon={faFile} />;
   }
 };
+
+export const speedString = (speed) => {
+  if(speed >= 1<<60) {
+    return (Math.round(speed/(1<<60) * 100) / 100).toFixed(2) + " EiB/s";
+  } else if(speed >= 1<<50) {
+    return (Math.round(speed/(1<<50) * 100) / 100).toFixed(2) + " PiB/s";
+  } else if(speed >= 1<<40) {
+    return (Math.round(speed/(1<<40) * 100) / 100).toFixed(2) + " TiB/s";
+  } else if(speed >= 1<<30) {
+    return (Math.round(speed/(1<<30) * 100) / 100).toFixed(2) + " GiB/s";
+  } else if(speed >= 1<<20) {
+    return (Math.round(speed/(1<<20) * 100) / 100).toFixed(2) + " MiB/s";
+  } else if(speed >= 1<<10) {
+    return (Math.round(speed/(1<<10) * 100) / 100).toFixed(2) + " KiB/s";
+  } else {
+    return (Math.round(speed * 100) / 100).toFixed(2) + " B/s";
+  }
+};
+
+export const durationString = (duration) => {
+  var seconds = duration%60;
+  duration -= seconds;
+  var minutes = (duration/60)%60;
+  duration -=  minutes;
+  var hours = Math.round(duration/60);
+  var str = "";
+  if(hours > 0) {
+    str += hours + "h ";
+  }
+
+  if(minutes > 0) {
+    str += minutes + "min ";
+  }
+
+  if(seconds > 0) {
+    str += seconds + "s";
+  }
+
+  return str;
+};

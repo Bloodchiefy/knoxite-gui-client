@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -115,8 +116,8 @@ func initConfig() error {
 	}
 
 	if fs, err := os.Stat(globalOpts.ConfigURL); err != nil || fs.Size() == 0 {
-		fmt.Println(fs.Size())
-		fmt.Println(err)
+		// fmt.Println(fs.Size())
+		// fmt.Println(err)
 		return cfg.Save()
 	}
 
@@ -338,29 +339,29 @@ func executeRepoCat() error {
 	return nil
 }
 
-// func executeRepoPack() error {
-// 	r, err := openRepository(globalOpts.Repo, globalOpts.Password)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	index, err := knoxite.OpenChunkIndex(&r)
-// 	if err != nil {
-// 		return err
-// 	}
+func executeRepoPack() error {
+	r, err := openRepository(globalOpts.Repo, globalOpts.Password)
+	if err != nil {
+		return err
+	}
+	index, err := knoxite.OpenChunkIndex(&r)
+	if err != nil {
+		return err
+	}
 
-// 	freedSize, err := index.Pack(&r)
-// 	if err != nil {
-// 		return err
-// 	}
+	freedSize, err := index.Pack(&r)
+	if err != nil {
+		return err
+	}
 
-// 	err = index.Save(&r)
-// 	if err != nil {
-// 		return err
-// 	}
+	err = index.Save(&r)
+	if err != nil {
+		return err
+	}
 
-// 	l.Printf("Freed storage space: %s\n", knoxite.SizeToString(freedSize))
-// 	return nil
-// }
+	fmt.Printf("Freed storage space: %s\n", knoxite.SizeToString(freedSize))
+	return nil
+}
 
 func executeRepoInfo() error {
 	r, err := openRepository(globalOpts.Repo, globalOpts.Password)
@@ -431,34 +432,20 @@ func executeRestore(snapshotID, target string, opts RestoreOptions) error {
 	for p := range progress {
 		if p.Error != nil {
 			if opts.Pedantic {
-				fmt.Println()
 				return p.Error
 			}
 			errs[p.Path] = p.Error
 			stats.Errors++
 		}
 
-		// pb.Total = int64(p.CurrentItemStats.Size)
-		// pb.Current = int64(p.CurrentItemStats.Transferred)
-		// pb.PrependText = fmt.Sprintf("%s / %s  %s/s",
-		// 	knoxite.SizeToString(uint64(pb.Current)),
-		// 	knoxite.SizeToString(uint64(pb.Total)),
-		// 	knoxite.SizeToString(p.TransferSpeed()))
-
 		if p.Path != lastPath {
 			// We have just started restoring a new item
-			if len(lastPath) > 0 {
-				fmt.Println()
-			}
 			lastPath = p.Path
-			// pb.Text = p.Path
 		}
 		if p.CurrentItemStats.Size == p.CurrentItemStats.Transferred {
 			// We have just finished restoring an item
 			stats.Add(p.TotalStatistics)
 		}
-
-		// pb.LazyPrint()
 	}
 	fmt.Println()
 	fmt.Println("Restore done:", stats.String())
@@ -542,9 +529,10 @@ func executeSnapshotList(volID string) error {
 }
 
 func store(repository *knoxite.Repository, chunkIndex *knoxite.ChunkIndex, snapshot *knoxite.Snapshot, targets []string, opts StoreOptions) error {
-	// we want to be notified during the first phase of a shutdown
-	cancel = shutdown.First()
-	// running = true
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	interrupt = make(chan bool)
 
 	wd, err := os.Getwd()
 	if err != nil {
@@ -574,29 +562,22 @@ func store(repository *knoxite.Repository, chunkIndex *knoxite.ChunkIndex, snaps
 		ParityParts: opts.FailureTolerance,
 	}
 
-	// f, err := os.OpenFile(filepath.Join(wd, "progress.log"), os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
-	// if err != nil {
-	// 	return err
-	// }
-	// defer f.Close()
-	// goprogressbar.Stdout = f
-
-	// startTime := time.Now()
-	progressHook = snapshot.Add(*repository, chunkIndex, so)
+	progressHook = snapshot.AddWithContext(ctx, *repository, chunkIndex, so)
 
 	lastPath := ""
 
 	items = uint64(1)
 	// items <- int64(1)
 	errs := make(map[string]error)
-	for p := range progressHook {
+	for {
 		select {
-		case n := <-cancel:
-			fmt.Println("Aborting...")
-			close(n)
+		case <-interrupt:
+			fmt.Println("Interrupted called.")
 			return nil
-
-		default:
+		case p, ok := <-progressHook:
+			if !ok {
+				return nil
+			}
 			if p.Error != nil {
 				if opts.Pedantic {
 					fmt.Println()
@@ -606,38 +587,14 @@ func store(repository *knoxite.Repository, chunkIndex *knoxite.ChunkIndex, snaps
 				snapshot.Stats.Errors++
 			}
 			if p.Path != lastPath && lastPath != "" {
-				// items <- (int64(1) + <-items)
 				items++
-				// fmt.Println()
 			}
-			// f.WriteString(fmt.Sprintf("%s  %s/s\n",
-			// 	knoxite.SizeToString(uint64(int64(p.CurrentItemStats.Transferred))),
-			// 	knoxite.SizeToString(p.TransferSpeed())))
-
-			// f.WriteString(fmt.Sprintf("%s / %s (%s of %s)\n",
-			// 	knoxite.SizeToString(uint64(int64(p.TotalStatistics.Transferred))),
-			// 	knoxite.SizeToString(uint64(int64(p.TotalStatistics.Size))),
-			// 	humanize.Comma(items),
-			// 	humanize.Comma(int64(p.TotalStatistics.Files+p.TotalStatistics.Dirs+p.TotalStatistics.SymLinks))))
 
 			if p.Path != lastPath {
 				lastPath = p.Path
-				fmt.Println(p.Path)
 			}
-			// fmt.Println(p.Path)
 		}
 	}
-
-	// p2 := <-progress
-
-	// f.WriteString(fmt.Sprintf("%s/s\n",
-	// 	knoxite.SizeToString(uint64(float64(int64(p2.TotalStatistics.Transferred))/time.Since(startTime).Seconds()))))
-	// f.WriteString(fmt.Sprintf("\nSnapshot %s created: %s\n", snapshot.ID, snapshot.Stats.String()))
-	// for file, err := range errs {
-	// 	f.WriteString(fmt.Sprintf("'%s': failed to store: %v\n", file, err))
-	// }
-
-	return nil
 }
 
 func executeStore(volumeID string, args []string, opts StoreOptions) error {

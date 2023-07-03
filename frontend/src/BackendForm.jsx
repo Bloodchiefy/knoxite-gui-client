@@ -10,6 +10,7 @@ const BackendForm = ({
   setBackend,
   setError,
   setDisplayError,
+  setDisplayLoading,
 }) => {
   const [formSelection, setFormSelection] = useState("alias");
   const [aliases, setAliases] = useState([]);
@@ -18,7 +19,9 @@ const BackendForm = ({
   useEffect(() => {
     if(!aliasesRef.current) {
       aliasesRef.current = true;
+      setDisplayLoading(true);
       InitGlobalOptsOnExistingConfig().then((result) => {
+        setDisplayLoading(false);
         if (result) {
           setAliases(result);
           setFormSelection("alias");
@@ -30,7 +33,9 @@ const BackendForm = ({
   });
 
   const switchToAlias = (form) => {
+    setDisplayLoading(true);
     InitGlobalOptsOnExistingConfig().then((result) => {
+      setDisplayLoading(false);
       if (result) {
         setAliases(result);
         setFormSelection("alias");
@@ -42,7 +47,7 @@ const BackendForm = ({
 
   const formRender = () => {
     switch(formSelection) {
-    case "alias": return <AlreadyConfiguredRepos aliases={aliases} setBackend={setBackend} setError={setError} setDisplayError={setDisplayError} />;
+    case "alias": return <AlreadyConfiguredRepos aliases={aliases} setBackend={setBackend} setError={setError} setDisplayError={setDisplayError} setDisplayLoading={setDisplayLoading} />;
     case "file": return <FileSystemForm switchToAlias={switchToAlias} />;
 
     default: return <></>;
@@ -68,6 +73,7 @@ const AlreadyConfiguredRepos = ({
   aliases,
   setDisplayError,
   setError,
+  setDisplayLoading,
 }) => {
   const [password, setPassword] = useState([]);
 
@@ -76,7 +82,9 @@ const AlreadyConfiguredRepos = ({
   };
 
   const login = (alias) => {
+    setDisplayLoading(true);
     InitConfigOnAlias(alias, password).then((result) => {
+      setDisplayLoading(false);
       if(result !== "") {
         setDisplayError(true);
         setError(result);
@@ -165,6 +173,7 @@ const FileSystemForm = ({
           <Form.Label>Folder</Form.Label>
           <div className='input-group'>
             <Form.Control type="text" value={folder} disabled={true} aria-describedby="formBasicFolderCheck" isInvalid={folder.trim() === ""} />
+            {" "}
             <div className='input-group-btn'>
               <Button variant="light" onClick={() => selectFolder()}>
                 <FontAwesomeIcon icon={faFolderOpen} />

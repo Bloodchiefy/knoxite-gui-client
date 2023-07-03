@@ -14,7 +14,10 @@ const Repository = ({
   snapshot,
   setSnapshot,
   snapshots,
-  setSnapshots
+  setSnapshots,
+  setDisplayLoading,
+  setDisplayError,
+  setError,
 }) => {
   const [view, setView] = useState("volumes");
   const [files, setFiles] = useState([]);
@@ -23,7 +26,7 @@ const Repository = ({
   switch(view) {
   case "volumes":
     return (
-      <Volumes setVolume={setVolume} setView={setView} />
+      <Volumes setVolume={setVolume} setView={setView} setDisplayLoading={setDisplayLoading} />
     );
   case "snapshots":
     return (
@@ -39,7 +42,10 @@ const Repository = ({
           snapshots={snapshots} 
           setSnapshots={setSnapshots} 
           setSnapshot={setSnapshot} 
-          setView={setView} />
+          setView={setView}
+          setDisplayLoading={setDisplayLoading}
+          setDisplayError={setDisplayError}
+          setError={setError} />
       </>
     );
   case "files":

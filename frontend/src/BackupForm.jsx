@@ -12,7 +12,10 @@ import "./styles/BackupForm.css";
 
 const BackupForm = ({
   setBackend,
-  setDisplayProgress
+  setDisplayProgress,
+  setDisplayLoading,
+  setDisplayError,
+  setError,
 }) => {
   const [volume, setVolume] = useState("");
   const [snapshot, setSnapshot] = useState("");
@@ -109,7 +112,10 @@ const BackupForm = ({
             snapshots={snapshots} 
             setSnapshots={setSnapshots}
             snapshot={snapshot}
-            setSnapshot={setSnapshot} />
+            setSnapshot={setSnapshot}
+            setDisplayLoading={setDisplayLoading}
+            setError={setError}
+            setDisplayError={setDisplayError} />
         </div>
       </div>
       {/* <Splitter

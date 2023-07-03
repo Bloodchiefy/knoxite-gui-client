@@ -22,6 +22,7 @@ var (
 	progressHook <-chan knoxite.Progress
 	items        uint64
 	cancel       shutdown.Notifier
+	interrupt    chan bool
 )
 
 // File struct
@@ -74,9 +75,15 @@ func (a *App) loadRepository() (*knoxite.Repository, error) {
 }
 
 func (a *App) Store(volID string, targets []string) {
-	go func() {
-		executeStore(volID, targets, StoreOptions{})
-	}()
+	// cancel = make(chan bool)
+	// contx, cncl = context.WithCancel(context.Background())
+	// defer cncl()
+	// go func() {
+	// 	executeStore(volID, targets, StoreOptions{})
+	// }()
+	cancel = shutdown.First()
+	// defer close(cancel)
+	executeStore(volID, targets, StoreOptions{})
 }
 
 func (a *App) Restore(snapID, target string) {
@@ -90,20 +97,39 @@ func (a *App) Restore(snapID, target string) {
 // }
 
 func (a *App) GetProgress() ProgressUI {
-	p := <-progressHook
-	fmt.Println(p)
-	stats := p.TotalStatistics
-	statsItems := uint64(stats.Dirs + stats.Files + stats.SymLinks)
-	if statsItems == items {
-		return ProgressUI{stats, statsItems}
+	if progressHook != nil {
+		p := <-progressHook
+		stats := p.TotalStatistics
+		statsItems := uint64(stats.Dirs + stats.Files + stats.SymLinks)
+		if statsItems == items {
+			return ProgressUI{stats, statsItems}
+		}
+		return ProgressUI{p.TotalStatistics, items}
+	} else {
+		return ProgressUI{knoxite.Stats{}, 0}
 	}
-	return ProgressUI{p.TotalStatistics, items}
 }
 
 func (a *App) Cancel() {
-	// fmt.Println("Cancel")
-	// close(<-cancel)
-	// fmt.Println("Cancel tried")
+	fmt.Println("Cancel")
+
+	// go shutdown.Shutdown()
+	// go func() {
+	// 	cancel <- true
+	// 	close(progressHook)
+	// }()
+	// close(progressHook)
+	// close(cancel)
+	// shutdown.CancelCtxN(a.ctx, shutdown.Stage{1})
+	interrupt <- true
+	// cancel <- struct{}{}
+	// cancel.Cancel()
+	// shutdown.CancelCtxN(a.ctx, shutdown.Stage1)
+	// syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+
+	// syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+	fmt.Println("Cancel tried")
+
 }
 
 // func (a *App) GetProgress() string {
@@ -212,6 +238,10 @@ func (a *App) GetSnapshots() (snapshots [][]string) {
 func (a *App) DeleteSnapshot(snapID string) string {
 	err := executeSnapshotRemove(snapID)
 	if err != nil {
+		return err.Error()
+	}
+
+	if err = executeRepoPack(); err != nil {
 		return err.Error()
 	}
 

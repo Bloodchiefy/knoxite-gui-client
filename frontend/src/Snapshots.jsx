@@ -1,6 +1,6 @@
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Button, Card, Container, Table } from "react-bootstrap";
 import { GetSnapshots, OpenAllSnapshots, OpenSnapshot, DeleteSnapshot } from "../wailsjs/go/main/App";
 import "./styles/VolumesSnapshots.css";
@@ -11,23 +11,33 @@ const Snapshots = ({
   setSnapshots,
   setSnapshot,
   setView,
-  setFiles
+  setFiles,
+  setDisplayLoading,
+  setDisplayError,
+  setError,
 }) => {
+  const snapshotsRef = useRef(false);
 
   useEffect(() => {
-    setTimeout(() => {
+    // setTimeout(() => {
+    if(!snapshotsRef.current) {
+      snapshotsRef.current = true;
+      setDisplayLoading(true);
       GetSnapshots(volume).then((result) => {
+        setDisplayLoading(false);
         if(result) {
           setSnapshots(result);
         } else {
           setSnapshots([]);
         }
       });
-    }, 1000);
+    }
+    // }, 1000);
   }, [
     setSnapshots,
     volume,
-    snapshots
+    snapshots,
+    setDisplayLoading,
   ]);
 
   const deleteSnapshots = (snapID) => {
@@ -45,6 +55,7 @@ const Snapshots = ({
   };
 
   const openSnapshot = (snapID) => {
+    setDisplayLoading(true);
     if(snapID === "all") {
       OpenAllSnapshots().then(result => {
         if(result) {
@@ -52,6 +63,10 @@ const Snapshots = ({
           setSnapshot("all");
           setView("files");
         }
+      }).catch((error) => {
+        setDisplayLoading(false);
+        setError(error.Body);
+        setDisplayError(true);
       });
     } else {
       OpenSnapshot(snapID).then((result) => {
@@ -60,6 +75,10 @@ const Snapshots = ({
           setSnapshot(snapID);
           setView("files");
         }
+      }).catch((error) => {
+        setDisplayLoading(false);
+        setError(error.Body);
+        setDisplayError(true);
       });
     }
   };

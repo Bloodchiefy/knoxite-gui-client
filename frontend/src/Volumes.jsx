@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button, Form, Card, Container, Table } from "react-bootstrap";
 import { CreateVolume, DeleteVolume, GetVolumes, OpenVolume } from "../wailsjs/go/main/App";
 
-const Volumes = ({setVolume, setView}) => {
+const Volumes = ({setVolume, setView, setDisplayLoading}) => {
   const [volumes, setVolumes] = useState([]);
   const [volumesView, setVolumesView] = useState("index");
   const [volumeName, setVolumeName] = useState("");

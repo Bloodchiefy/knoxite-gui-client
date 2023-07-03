@@ -7,7 +7,8 @@ require (
 	github.com/klauspost/shutdown2 v1.1.0
 	github.com/knoxite/knoxite v0.0.0-20230317212904-5087cfcdfc76
 	github.com/muesli/gotable v0.0.0-20210307142814-960606545b8b
-	github.com/wailsapp/wails/v2 v2.4.1
+	github.com/pkg/browser v0.0.0-20210706143420-7d21f8c997e2
+	github.com/wailsapp/wails/v2 v2.5.1
 )
 
 require (
@@ -32,7 +33,6 @@ require (
 	github.com/muesli/go-app-paths v0.2.1 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
-	github.com/pkg/browser v0.0.0-20210706143420-7d21f8c997e2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/restic/chunker v0.4.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
@@ -52,3 +52,5 @@ require (
 )
 
 // replace github.com/wailsapp/wails/v2 v2.4.1 => /home/lordv/go/pkg/mod
+
+replace github.com/knoxite/knoxite => ../knoxite
